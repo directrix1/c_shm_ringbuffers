@@ -17,9 +17,6 @@ struct ShmRingBuffer {
 
     // These are always filled in by the 'new' functions.
     uint64_t read_ring_pos;
-    uint64_t ringbuffers_offset;
-    uint64_t description_offset;
-    uint64_t description_length;
     void* buffers;
 };
 
@@ -31,7 +28,8 @@ struct ShmRingBuffersHead {
 
 struct ShmRingBuffersLocal {
     struct ShmRingBuffersHead* ring_buffers_head;
-    // TODO: other fds and whatnot go here
+    int is_producer;
+    int shm_fd;
 };
 
 typedef struct ShmRingBuffersLocal* SRBHandle;
@@ -49,7 +47,7 @@ typedef struct ShmRingBuffersLocal* SRBHandle;
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle srb_subscriber_new(char* shm_path);
+SRBHandle srb_subscriber_new(const char* shm_path);
 
 /*
  * srb_subscriber_get_most_recent_buffer
@@ -89,7 +87,7 @@ enum EShmRingBuffersState srb_subscriber_get_state(SRBHandle ring_buffers_handle
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle srb_producer_new(char* shm_path, uint64_t num_defs, struct ShmRingBuffer* ring_buffer_defs);
+SRBHandle srb_producer_new(const char* shm_path, uint64_t num_defs, struct ShmRingBuffer* ring_buffer_defs);
 
 /*
  * srb_producer_first_write_buffer

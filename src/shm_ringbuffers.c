@@ -1,6 +1,12 @@
 #include "shm_ringbuffers.h"
+#include <fcntl.h> /* For O_* constants */
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h> /* For mode constants */
+#include <unistd.h>
 
 // ====================
 // Subscriber functions
@@ -15,7 +21,7 @@
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle srb_subscriber_new(char* shm_path)
+SRBHandle srb_subscriber_new(const char* shm_path)
 {
     return NULL;
 }
@@ -64,9 +70,61 @@ enum EShmRingBuffersState srb_subscriber_get_state(SRBHandle ring_buffers_handle
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle srb_producer_new(char* shm_path, uint64_t num_defs, struct ShmRingBuffer* ring_buffer_defs)
+SRBHandle srb_producer_new(const char* shm_path, uint64_t num_defs, struct ShmRingBuffer* ring_buffer_defs)
 {
-    return NULL;
+    int head_size = sizeof(struct ShmRingBuffersHead);
+    int rb_size = sizeof(struct ShmRingBuffer);
+    int descriptions_offset = head_size + rb_size * num_defs;
+    int descriptions_size = 0;
+    int buffers_size = 0;
+    for (int i = 0; i < num_defs; i++) {
+        // TODO: handle null description
+        descriptions_size += strlen(ring_buffer_defs[i].description) + 1;
+        buffers_size += ring_buffer_defs[i].num_buffers * ring_buffer_defs[i].buffer_size;
+    }
+    int buffers_offset = descriptions_offset + descriptions_size;
+    buffers_offset /= 4096;
+    buffers_offset = 4096 * (1 + buffers_offset); // 4k align buffers area past end of header info
+    int total_size = buffers_offset + buffers_size;
+
+    int shmfd = shm_open(shm_path, O_CREAT | O_RDWR, S_IRWXU);
+    if (shmfd <= 0) {
+        fprintf(stderr, "Error creating shm object (%s): %d\n", shm_path, shmfd);
+        return NULL;
+    }
+    if (ftruncate(shmfd, total_size) < 0) {
+        fprintf(stderr, "Error truncating shm object (%s) at size: %d\n", shm_path, total_size);
+    }
+    uint8_t* m = (uint8_t*)mmap(NULL, total_size, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
+
+    // Create the memory mapped structure
+    SRBHandle handle = malloc(sizeof(struct ShmRingBuffersLocal));
+    handle->is_producer = 1;
+    handle->shm_fd = shmfd;
+    struct ShmRingBuffersHead* head = handle->ring_buffers_head = (struct ShmRingBuffersHead*)m;
+    head->state = SRB_STOPPED;
+    head->num_ringbuffers = num_defs;
+    head->ringbuffers = (struct ShmRingBuffer*)(m + head_size);
+    char* description = (char*)(m + descriptions_offset);
+    uint8_t* buffer = m + buffers_offset;
+    for (int i = 0; i < num_defs; i++) {
+        struct ShmRingBuffer* dest = head->ringbuffers + i;
+        struct ShmRingBuffer* src = ring_buffer_defs + i;
+        dest->num_buffers = src->num_buffers;
+        dest->buffer_size = src->buffer_size;
+        dest->description = description;
+        // TODO: handle null description
+        strcpy(src->description, description);
+        dest->buffers = (void*)buffer;
+
+        if (i < (num_defs - 1)) {
+            // TODO: handle null description
+            description += strlen(description) + 1;
+            buffer += dest->num_buffers * dest->buffer_size;
+        }
+    }
+
+    return handle;
 }
 
 /*
