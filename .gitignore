@@ -3,3 +3,4 @@ build/
 *.so
 *.kate-swp
 .sconsign.dblite
+.cache
