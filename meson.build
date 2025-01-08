@@ -4,7 +4,7 @@ project('shm_ringbuffers', 'c',
 
 # These arguments are only used to build the shared library
 # not the executables that use the library.
-lib_args = ['-DBUILDING_SHM_RINGBUFFERS -I.']
+lib_args = ['-DBUILDING_SHM_RINGBUFFERS','-Isrc']
 
 shlib = shared_library('shm_ringbuffers', 'src/shm_ringbuffers.c',
   install : true,
