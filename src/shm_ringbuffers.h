@@ -23,27 +23,37 @@ enum EShmRingBuffersState {
     SRB_STOPPING = 2,
 };
 
-struct ShmRingBuffer {
-    // Only need to def these members when becoming producer, subscriber fills all fields.
-    uint64_t buffer_size;
-    uint64_t num_buffers;
+struct ShmRingBufferDef {
+    unsigned int buffer_size;
+    unsigned int num_buffers;
     char* description;
+};
 
-    // These are always filled in by the 'new' functions.
-    uint64_t read_ring_pos;
-    void* buffers;
+struct ShmRingBufferShared {
+    unsigned int buffer_size;
+    unsigned int num_buffers;
+    unsigned int write_ring_pos;
+};
+
+struct ShmRingBuffer {
+    char* description;
+    uint8_t* buffers;
+    struct ShmRingBufferShared* shared;
 };
 
 struct ShmRingBuffersHead {
     enum EShmRingBuffersState state;
-    uint64_t num_ringbuffers;
-    struct ShmRingBuffer* ringbuffers;
+    unsigned int num_ringbuffers;
 };
 
 struct ShmRingBuffersLocal {
     struct ShmRingBuffersHead* ring_buffers_head;
+    struct ShmRingBuffer* ringbuffers;
     int is_producer;
     int shm_fd;
+    uint8_t* mem_map;
+    const char* shm_path;
+    unsigned int shm_size;
 };
 
 typedef struct ShmRingBuffersLocal* SRBHandle;
@@ -64,6 +74,17 @@ typedef struct ShmRingBuffersLocal* SRBHandle;
 SRBHandle SHM_RINGBUFFERS_PUBLIC srb_subscriber_new(const char* shm_path);
 
 /*
+ * srb_subscriber_get_most_recent_buffer_id
+ *
+ * params:
+ *   ring_buffer - the ring buffer to get the most recent buffer id
+ *
+ * returns:
+ *   the most recent buffer id, that is not currently set as the write_ring_pos, or 0 if no valid buffers exist
+ */
+unsigned int SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_most_recent_buffer_id(struct ShmRingBuffer* ring_buffer);
+
+/*
  * srb_subscriber_get_most_recent_buffer
  *
  * params:
@@ -72,7 +93,7 @@ SRBHandle SHM_RINGBUFFERS_PUBLIC srb_subscriber_new(const char* shm_path);
  * returns:
  *   the most recent buffer that is not currently set as the write_ring_pos, or NULL if no valid buffers exist
  */
-void* SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_most_recent_buffer(struct ShmRingBuffer* ring_buffer);
+uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_most_recent_buffer(struct ShmRingBuffer* ring_buffer);
 
 /*
  * srb_subscriber_get_state
@@ -101,7 +122,7 @@ enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_state(SRBHan
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle SHM_RINGBUFFERS_PUBLIC srb_producer_new(const char* shm_path, uint64_t num_defs, struct ShmRingBuffer* ring_buffer_defs);
+SRBHandle SHM_RINGBUFFERS_PUBLIC srb_producer_new(const char* shm_path, unsigned int num_defs, struct ShmRingBufferDef* ring_buffer_defs);
 
 /*
  * srb_producer_first_write_buffer
@@ -112,11 +133,11 @@ SRBHandle SHM_RINGBUFFERS_PUBLIC srb_producer_new(const char* shm_path, uint64_t
  * return:
  *   pointer to the first shared buffer
  */
-void* SHM_RINGBUFFERS_PUBLIC srb_producer_first_write_buffer(struct ShmRingBuffer* ring_buffer);
+uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_first_write_buffer(struct ShmRingBuffer* ring_buffer);
 
 /*
  * srb_producer_next_write_buffer
- *   this function returns the next shared write buffer and also calls srb_signal_running.
+ *   this function returns the next shared write buffer.
  *
  * params:
  *   ring_buffer - the ring buffer to get the next shared buffer from
@@ -124,17 +145,7 @@ void* SHM_RINGBUFFERS_PUBLIC srb_producer_first_write_buffer(struct ShmRingBuffe
  * return:
  *   pointer to the next shared buffer
  */
-void* SHM_RINGBUFFERS_PUBLIC srb_producer_next_write_buffer(struct ShmRingBuffer* ring_buffer);
-
-/*
- * srb_producer_signal_running
- *   sets shared state to SRB_RUNNING
- *
- * params:
- *   ring_buffers_handle - the handle to the ring buffer's shared memory'
- *
- */
-void SHM_RINGBUFFERS_PUBLIC srb_producer_signal_running(SRBHandle ring_buffers_handle);
+uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_next_write_buffer(struct ShmRingBuffer* ring_buffer);
 
 /*
  * srb_producer_signal_stopping
@@ -160,7 +171,7 @@ void SHM_RINGBUFFERS_PUBLIC srb_producer_signal_stopping(SRBHandle ring_buffers_
  * returns:
  *   the number of ring_buffers
  */
-uint64_t SHM_RINGBUFFERS_PUBLIC srb_get_rings(SRBHandle ring_buffers_handle, struct ShmRingBuffer** ring_buffers);
+unsigned int SHM_RINGBUFFERS_PUBLIC srb_get_rings(SRBHandle ring_buffers_handle, struct ShmRingBuffer** ring_buffers);
 
 /*
  * srb_close
