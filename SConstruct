@@ -1,4 +1,6 @@
-env = Environment(CCFLAGS='-Isrc')
+env = Environment(
+    CCFLAGS='-Isrc'
+    )
 
 libFiles = Glob('src/*.c')
 
