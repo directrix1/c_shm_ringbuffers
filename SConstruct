@@ -1,9 +1,11 @@
+VariantDir('build', 'src')
+
 env = Environment(
-    CCFLAGS='-Isrc'
+    CCFLAGS='-Ibuild'
     )
 
-libFiles = Glob('src/*.c')
+libFiles = Glob('build/*.c')
 
-lib = env.SharedLibrary('shm_ringbuffers', libFiles)
+lib = env.SharedLibrary('build/shm_ringbuffers', libFiles)
 
 Default(lib)
