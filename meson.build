@@ -12,8 +12,12 @@ shlib = shared_library('shm_ringbuffers', 'src/shm_ringbuffers.c',
   gnu_symbol_visibility : 'hidden',
 )
 
-# test_exe = executable('shm_ringbuffers_test', 'shm_ringbuffers_test.c',
-#   link_with : shlib)
+producer_test_exe = executable('producer_test', 'tests/producer_test.c',
+   include_directories: include_directories('src'),
+   link_with : shlib)
+subscriber_test_exe = executable('subscriber_test', 'tests/subscriber_test.c',
+   include_directories: include_directories('src'),
+   link_with : shlib)
 # test('shm_ringbuffers', test_exe)
 
 # Make this library usable as a Meson subproject.

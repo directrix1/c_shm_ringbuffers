@@ -163,7 +163,7 @@ SRBHandle srb_producer_new(const char* shm_path, unsigned int num_defs, struct S
 {
     // Ascertain sizes of everything
     int head_size = sizeof(struct ShmRingBuffersHead);
-    int rb_size = sizeof(struct ShmRingBuffer);
+    int rb_size = sizeof(struct ShmRingBufferShared);
     int descriptions_offset = head_size + rb_size * num_defs;
     int descriptions_size = 0;
     int buffers_size = 0;
@@ -214,7 +214,7 @@ SRBHandle srb_producer_new(const char* shm_path, unsigned int num_defs, struct S
         dest->shared->write_ring_pos = 1;
         dest->description = description;
         if (src->description) {
-            strcpy(src->description, description);
+            strcpy(description, src->description);
         } else {
             description[0] = 0; // zero length string for null src description
         }
