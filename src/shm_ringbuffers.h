@@ -49,7 +49,7 @@ struct ShmRingBuffersHead {
 struct ShmRingBuffersLocal {
     struct ShmRingBuffersHead* ring_buffers_head;
     struct ShmRingBuffer* ringbuffers;
-    int is_producer;
+    int is_host;
     int shm_fd;
     uint8_t* mem_map;
     const char* shm_path;
@@ -61,17 +61,6 @@ typedef struct ShmRingBuffersLocal* SRBHandle;
 // ====================
 // Subscriber functions
 // ====================
-
-/*
- * srb_subscriber_new
- *
- * params:
- *   shm_path - shared memory path
- *
- * returns:
- *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
- */
-SRBHandle SHM_RINGBUFFERS_PUBLIC srb_subscriber_new(const char* shm_path);
 
 /*
  * srb_subscriber_get_most_recent_buffer_id
@@ -111,20 +100,6 @@ enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_state(SRBHan
 // ==================
 
 /*
- * srb_producer_new
- *
- * params:
- *   shm_path - shared memory path
- *   num_defs - the number of ringbuffers you are defining
- *   ring_buffer_defs - array of {struct ShmRingBuffer}s which will be created in the mmap based on the supplied members:
- *        buffer_size, num_buffers, and description. (these can be freed if wanted after this call)
- *
- * returns:
- *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
- */
-SRBHandle SHM_RINGBUFFERS_PUBLIC srb_producer_new(const char* shm_path, unsigned int num_defs, struct ShmRingBufferDef* ring_buffer_defs);
-
-/*
  * srb_producer_first_write_buffer
  *
  * params:
@@ -160,6 +135,31 @@ void SHM_RINGBUFFERS_PUBLIC srb_producer_signal_stopping(SRBHandle ring_buffers_
 // =================================================
 // Common functions to producer and subscriber sides
 // =================================================
+
+/*
+ * srb_host_new
+ *
+ * params:
+ *   shm_path - shared memory path
+ *   num_defs - the number of ringbuffers you are defining
+ *   ring_buffer_defs - array of {struct ShmRingBuffer}s which will be created in the mmap based on the supplied members:
+ *        buffer_size, num_buffers, and description. (these can be freed if wanted after this call)
+ *
+ * returns:
+ *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
+ */
+SRBHandle SHM_RINGBUFFERS_PUBLIC srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRingBufferDef* ring_buffer_defs);
+
+/*
+ * srb_client_new
+ *
+ * params:
+ *   shm_path - shared memory path
+ *
+ * returns:
+ *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
+ */
+SRBHandle SHM_RINGBUFFERS_PUBLIC srb_client_new(const char* shm_path);
 
 /*
  * srb_get_rings

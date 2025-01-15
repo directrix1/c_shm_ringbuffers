@@ -8,7 +8,7 @@ int main()
     printf("Subscriber side test\n");
 
     struct ShmRingBuffer* srb;
-    SRBHandle h = srb_subscriber_new("/srb_test1");
+    SRBHandle h = srb_client_new("/srb_test1");
     if (h == NULL) {
         return 1;
     }

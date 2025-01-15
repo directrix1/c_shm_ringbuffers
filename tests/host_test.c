@@ -16,7 +16,7 @@ int main()
     };
 
     struct ShmRingBuffer* srb;
-    SRBHandle h = srb_producer_new("/srb_test1", 1, &srbd);
+    SRBHandle h = srb_host_new("/srb_test1", 1, &srbd);
     srb_get_rings(h, &srb); // We know there's only 1 so ignore return
     printf("Created ring description: %s\n", srb->description);
 
