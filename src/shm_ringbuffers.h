@@ -210,6 +210,18 @@ enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_client_get_state(SRBHandle 
 unsigned int SHM_RINGBUFFERS_PUBLIC srb_get_rings(SRBHandle ring_buffers_handle, struct ShmRingBuffer** ring_buffers);
 
 /*
+ * srb_get_ring_by_description
+ *
+ * params:
+ *   ring_buffers_handle - the handle to the ring buffer's shared memory
+ *   description - will be set to the memory mapped ring_buffers
+ *
+ * returns:
+ *   a pointer to the ring buffer or NULL if not found
+ */
+struct ShmRingBuffer SHM_RINGBUFFERS_PUBLIC* srb_get_ring_by_description(SRBHandle ring_buffers_handle, char* description);
+
+/*
  * srb_close
  *   unmaps all ring buffers and closes the shared memory, if producer first signals SRB_STOPPED
  *

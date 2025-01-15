@@ -87,6 +87,7 @@ int main(int argc, char** argv)
         printf("Created ring description: %s\n", srb->description);
         while (1) {
             // This is also a client and can produce/subscribe to buffers here
+            sleep(1);
         };
 
     } else if (strcmp(argv[1], "producer") == 0) {
@@ -99,12 +100,12 @@ int main(int argc, char** argv)
         }
         signal(SIGINT, closeSRB);
 
-        int num_rings = srb_get_rings(h, &srb);
-        if (num_rings != 1) {
-            fprintf(stderr, "Returned too many rings: %u.\n", num_rings);
-            return 2;
+        srb = srb_get_ring_by_description(h, channelName);
+        if (srb) {
+            printf("Found ring: %s\n", srb->description);
         } else {
-            printf("Ring description (length: %ld): %s\n", strlen(srb->description), srb->description);
+            fprintf(stderr, "Could not find ring: %s\n", channelName);
+            closeSRB(2);
         }
 
         int64_t all_words_size = 0;
@@ -137,18 +138,20 @@ int main(int argc, char** argv)
         }
         signal(SIGINT, closeSRB);
 
-        int num_rings = srb_get_rings(h, &srb);
-        if (num_rings != 1) {
-            fprintf(stderr, "Returned too many rings: %u.\n", num_rings);
-            return 2;
+        srb = srb_get_ring_by_description(h, channelName);
+        if (srb) {
+            printf("Found ring: %s\n", srb->description);
         } else {
-            printf("Ring description (length: %ld): %s\n", strlen(srb->description), srb->description);
+            fprintf(stderr, "Could not find ring: %s\n", channelName);
+            closeSRB(2);
         }
 
         struct test_struct1* cur;
         while (srb_client_get_state(h) == SRB_RUNNING) {
             if ((cur = (struct test_struct1*)srb_subscriber_get_next_unread_buffer(srb))) {
                 printf("Received: %ld %s\n", cur->anum, cur->aword);
+            } else {
+                sleep(1);
             }
         };
 

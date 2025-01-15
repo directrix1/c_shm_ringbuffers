@@ -350,6 +350,27 @@ unsigned int srb_get_rings(SRBHandle ring_buffers_handle, struct ShmRingBuffer**
 }
 
 /*
+ * srb_get_ring_by_description
+ *
+ * params:
+ *   ring_buffers_handle - the handle to the ring buffer's shared memory
+ *   description - will be set to the memory mapped ring_buffers
+ *
+ * returns:
+ *   a pointer to the ring buffer or NULL if not found
+ */
+struct ShmRingBuffer SHM_RINGBUFFERS_PUBLIC* srb_get_ring_by_description(SRBHandle ring_buffers_handle, char* description)
+{
+    struct ShmRingBuffer* b = ring_buffers_handle->ringbuffers;
+    for (unsigned int i = 0; i < ring_buffers_handle->ring_buffers_head->num_ringbuffers; i++) {
+        if (strcmp(b[i].description, description) == 0) {
+            return &(b[i]);
+        }
+    }
+    return NULL;
+}
+
+/*
  * srb_close
  *   unmaps all ring buffers and closes the shared memory, if producer first signals SRB_STOPPED
  *
