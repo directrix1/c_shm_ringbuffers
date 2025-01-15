@@ -1,3 +1,27 @@
+/******************************************************************************
+ *
+ * Copyright (c) 2025-present Edward Andrew Flick.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #include "shm_ringbuffers.h"
 #include <fcntl.h> /* For O_* constants */
 #include <stdint.h>
@@ -29,7 +53,7 @@ unsigned int get_aligned_size(unsigned int in_size)
  */
 unsigned int srb_subscriber_get_most_recent_buffer_id(struct ShmRingBuffer* ring_buffer)
 {
-    return ring_buffer->shared->write_ring_pos - 1;
+    return ring_buffer->shared->write_ring_pos - ring_buffer->shared->num_buffers;
 }
 
 /*
@@ -44,23 +68,50 @@ unsigned int srb_subscriber_get_most_recent_buffer_id(struct ShmRingBuffer* ring
 uint8_t* srb_subscriber_get_most_recent_buffer(struct ShmRingBuffer* ring_buffer)
 {
     unsigned int b = ring_buffer->shared->write_ring_pos - 1;
-    if (b == 0) {
-        return NULL;
+    if (b < ring_buffer->shared->num_buffers) {
+        return NULL; // No buffers yet.
     }
     b = b % ring_buffer->shared->num_buffers;
     return ring_buffer->buffers + (b * ring_buffer->shared->buffer_size);
 }
 
 /*
- * srb_subscriber_get_state
+ * srb_subscriber_get_next_unread_buffer
+ *
+ * params:
+ *   ring_buffer - the ring buffer to get the next unread buffer
+ *
+ * returns:
+ *   the next unread buffer up until to write_ring_pos - 1, or NULL if no buffers meet this criteria
+ */
+uint8_t* srb_subscriber_get_next_unread_buffer(struct ShmRingBuffer* ring_buffer)
+{
+    unsigned int b = ring_buffer->shared->write_ring_pos - 1;
+    if (b < ring_buffer->shared->num_buffers) {
+        return NULL; // No buffers yet.
+    }
+    if (ring_buffer->last_read_ring_pos >= b) {
+        return NULL; // All caught up.
+    }
+    ring_buffer->last_read_ring_pos++;
+    b -= ring_buffer->last_read_ring_pos;
+    if (b >= (ring_buffer->shared->num_buffers - 1)) {
+        ring_buffer->last_read_ring_pos += b; // Fallen too far behind, catch up to newest buffer
+    }
+    b = ring_buffer->last_read_ring_pos % ring_buffer->shared->num_buffers;
+    return ring_buffer->buffers + (b * ring_buffer->shared->buffer_size);
+}
+
+/*
+ * srb_client_get_state
  *
  * params:
  *   ring_buffers_handle - the handle to the ring buffer's shared memory
  *
  * returns:
- *   the run state of the producer
+ *   the run state of the host
  */
-enum EShmRingBuffersState srb_subscriber_get_state(SRBHandle ring_buffers_handle)
+enum EShmRingBuffersState srb_client_get_state(SRBHandle ring_buffers_handle)
 {
     return ring_buffers_handle->ring_buffers_head->state;
 }
@@ -98,22 +149,6 @@ uint8_t* srb_producer_next_write_buffer(struct ShmRingBuffer* ring_buffer)
 {
     unsigned int b = ++(ring_buffer->shared->write_ring_pos) % ring_buffer->shared->num_buffers;
     return ring_buffer->buffers + (b * ring_buffer->shared->buffer_size);
-}
-
-/*
- * srb_producer_signal_stopping
- *   sets shared state to SRB_STOPPING
- *
- * params:
- *   ring_buffers_handle - the handle to the ring buffer's shared memory'
- *
- */
-void srb_producer_signal_stopping(SRBHandle ring_buffers_handle)
-{
-    SRBHandle handle = ring_buffers_handle;
-    if (handle->is_host) {
-        handle->ring_buffers_head->state = SRB_STOPPING;
-    }
 }
 
 // =================================================
@@ -184,7 +219,7 @@ SRBHandle srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRi
         struct ShmRingBufferDef* src = ring_buffer_defs + i;
         dest->shared->num_buffers = src->num_buffers;
         dest->shared->buffer_size = src->buffer_size;
-        dest->shared->write_ring_pos = 1;
+        dest->shared->write_ring_pos = src->num_buffers;
         dest->description = description;
         if (src->description) {
             strcpy(description, src->description);
@@ -202,6 +237,22 @@ SRBHandle srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRi
     head->state = SRB_RUNNING;
 
     return handle;
+}
+
+/*
+ * srb_host_signal_stopping
+ *   Call this from host to give clients time to shutdown.
+ *
+ * params:
+ *   ring_buffers_handle - the handle to the ring buffer's shared memory'
+ *
+ */
+void srb_host_signal_stopping(SRBHandle ring_buffers_handle)
+{
+    SRBHandle handle = ring_buffers_handle;
+    if (handle->is_host) {
+        handle->ring_buffers_head->state = SRB_STOPPING;
+    }
 }
 
 /*

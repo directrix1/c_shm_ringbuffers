@@ -1,3 +1,27 @@
+/******************************************************************************
+ *
+ * Copyright (c) 2025-present Edward Andrew Flick.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
+
 #ifndef SHM_RINGBUFFERS_H
 #define SHM_RINGBUFFERS_H
 
@@ -38,6 +62,7 @@ struct ShmRingBufferShared {
 struct ShmRingBuffer {
     char* description;
     uint8_t* buffers;
+    unsigned int last_read_ring_pos; // Local to each process.
     struct ShmRingBufferShared* shared;
 };
 
@@ -85,15 +110,15 @@ unsigned int SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_most_recent_buffer_id(str
 uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_most_recent_buffer(struct ShmRingBuffer* ring_buffer);
 
 /*
- * srb_subscriber_get_state
+ * srb_subscriber_get_next_unread_buffer
  *
  * params:
- *   ring_buffers_handle - the handle to the ring buffer's shared memory
+ *   ring_buffer - the ring buffer to get the next unread buffer
  *
  * returns:
- *   the run state of the producer
+ *   the next unread buffer up until to write_ring_pos - 1, or NULL if no buffers meet this criteria
  */
-enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_state(SRBHandle ring_buffers_handle);
+uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_next_unread_buffer(struct ShmRingBuffer* ring_buffer);
 
 // ==================
 // Producer functions
@@ -122,16 +147,6 @@ uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_first_write_buffer(struct ShmRingBu
  */
 uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_next_write_buffer(struct ShmRingBuffer* ring_buffer);
 
-/*
- * srb_producer_signal_stopping
- *   sets shared state to SRB_STOPPING
- *
- * params:
- *   ring_buffers_handle - the handle to the ring buffer's shared memory'
- *
- */
-void SHM_RINGBUFFERS_PUBLIC srb_producer_signal_stopping(SRBHandle ring_buffers_handle);
-
 // =================================================
 // Common functions to producer and subscriber sides
 // =================================================
@@ -151,6 +166,16 @@ void SHM_RINGBUFFERS_PUBLIC srb_producer_signal_stopping(SRBHandle ring_buffers_
 SRBHandle SHM_RINGBUFFERS_PUBLIC srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRingBufferDef* ring_buffer_defs);
 
 /*
+ * srb_host_signal_stopping
+ *   Call this from host to give clients time to shutdown.
+ *
+ * params:
+ *   ring_buffers_handle - the handle to the ring buffer's shared memory'
+ *
+ */
+void SHM_RINGBUFFERS_PUBLIC srb_host_signal_stopping(SRBHandle ring_buffers_handle);
+
+/*
  * srb_client_new
  *
  * params:
@@ -160,6 +185,17 @@ SRBHandle SHM_RINGBUFFERS_PUBLIC srb_host_new(const char* shm_path, unsigned int
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
 SRBHandle SHM_RINGBUFFERS_PUBLIC srb_client_new(const char* shm_path);
+
+/*
+ * srb_client_get_state
+ *
+ * params:
+ *   ring_buffers_handle - the handle to the ring buffer's shared memory
+ *
+ * returns:
+ *   the run state of the host
+ */
+enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_client_get_state(SRBHandle ring_buffers_handle);
 
 /*
  * srb_get_rings

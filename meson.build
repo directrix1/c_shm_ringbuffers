@@ -12,10 +12,7 @@ shlib = shared_library('shm_ringbuffers', 'src/shm_ringbuffers.c',
   gnu_symbol_visibility : 'hidden',
 )
 
-producer_test_exe = executable('host_test', 'tests/host_test.c',
-   include_directories: include_directories('src'),
-   link_with : shlib)
-subscriber_test_exe = executable('client_test', 'tests/client_test.c',
+test_exe = executable('test1', 'tests/test1.c',
    include_directories: include_directories('src'),
    link_with : shlib)
 # test('shm_ringbuffers', test_exe)
