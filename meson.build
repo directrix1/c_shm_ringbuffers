@@ -15,6 +15,10 @@ shlib = shared_library('shm_ringbuffers', 'src/shm_ringbuffers.c',
 test_exe = executable('test1', 'tests/test1.c',
    include_directories: include_directories('src'),
    link_with : shlib)
+test_1920x1080RGBA_exe = executable('test_1920x1080RGBA', 'tests/test_1920x1080RGBA.c',
+   include_directories: include_directories('src'),
+   link_args : ['-lm'],
+   link_with : shlib)
 # test('shm_ringbuffers', test_exe)
 
 # Make this library usable as a Meson subproject.

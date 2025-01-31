@@ -96,7 +96,7 @@ typedef struct ShmRingBuffersLocal* SRBHandle;
  * returns:
  *   the most recent buffer id, that is not currently set as the write_ring_pos, or 0 if no valid buffers exist
  */
-unsigned int SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_most_recent_buffer_id(struct ShmRingBuffer* ring_buffer);
+SHM_RINGBUFFERS_PUBLIC unsigned int srb_subscriber_get_most_recent_buffer_id(struct ShmRingBuffer* ring_buffer);
 
 /*
  * srb_subscriber_get_most_recent_buffer
@@ -107,7 +107,7 @@ unsigned int SHM_RINGBUFFERS_PUBLIC srb_subscriber_get_most_recent_buffer_id(str
  * returns:
  *   the most recent buffer that is not currently set as the write_ring_pos, or NULL if no valid buffers exist
  */
-uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_most_recent_buffer(struct ShmRingBuffer* ring_buffer);
+SHM_RINGBUFFERS_PUBLIC uint8_t* srb_subscriber_get_most_recent_buffer(struct ShmRingBuffer* ring_buffer);
 
 /*
  * srb_subscriber_get_next_unread_buffer
@@ -118,7 +118,7 @@ uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_most_recent_buffer(struct Shm
  * returns:
  *   the next unread buffer up until to write_ring_pos - 1, or NULL if no buffers meet this criteria
  */
-uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_next_unread_buffer(struct ShmRingBuffer* ring_buffer);
+SHM_RINGBUFFERS_PUBLIC uint8_t* srb_subscriber_get_next_unread_buffer(struct ShmRingBuffer* ring_buffer);
 
 // ==================
 // Producer functions
@@ -133,7 +133,7 @@ uint8_t SHM_RINGBUFFERS_PUBLIC* srb_subscriber_get_next_unread_buffer(struct Shm
  * return:
  *   pointer to the first shared buffer
  */
-uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_first_write_buffer(struct ShmRingBuffer* ring_buffer);
+SHM_RINGBUFFERS_PUBLIC uint8_t* srb_producer_first_write_buffer(struct ShmRingBuffer* ring_buffer);
 
 /*
  * srb_producer_next_write_buffer
@@ -145,7 +145,7 @@ uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_first_write_buffer(struct ShmRingBu
  * return:
  *   pointer to the next shared buffer
  */
-uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_next_write_buffer(struct ShmRingBuffer* ring_buffer);
+SHM_RINGBUFFERS_PUBLIC uint8_t* srb_producer_next_write_buffer(struct ShmRingBuffer* ring_buffer);
 
 // =================================================
 // Common functions to producer and subscriber sides
@@ -163,7 +163,7 @@ uint8_t SHM_RINGBUFFERS_PUBLIC* srb_producer_next_write_buffer(struct ShmRingBuf
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle SHM_RINGBUFFERS_PUBLIC srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRingBufferDef* ring_buffer_defs);
+SHM_RINGBUFFERS_PUBLIC SRBHandle srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRingBufferDef* ring_buffer_defs);
 
 /*
  * srb_host_signal_stopping
@@ -173,7 +173,7 @@ SRBHandle SHM_RINGBUFFERS_PUBLIC srb_host_new(const char* shm_path, unsigned int
  *   ring_buffers_handle - the handle to the ring buffer's shared memory'
  *
  */
-void SHM_RINGBUFFERS_PUBLIC srb_host_signal_stopping(SRBHandle ring_buffers_handle);
+SHM_RINGBUFFERS_PUBLIC void srb_host_signal_stopping(SRBHandle ring_buffers_handle);
 
 /*
  * srb_client_new
@@ -184,7 +184,7 @@ void SHM_RINGBUFFERS_PUBLIC srb_host_signal_stopping(SRBHandle ring_buffers_hand
  * returns:
  *   the SRBHandle that references the shared memory ring buffers. This is usually followed up with srb_get_rings call.
  */
-SRBHandle SHM_RINGBUFFERS_PUBLIC srb_client_new(const char* shm_path);
+SHM_RINGBUFFERS_PUBLIC SRBHandle srb_client_new(const char* shm_path);
 
 /*
  * srb_client_get_state
@@ -195,7 +195,7 @@ SRBHandle SHM_RINGBUFFERS_PUBLIC srb_client_new(const char* shm_path);
  * returns:
  *   the run state of the host
  */
-enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_client_get_state(SRBHandle ring_buffers_handle);
+SHM_RINGBUFFERS_PUBLIC enum EShmRingBuffersState srb_client_get_state(SRBHandle ring_buffers_handle);
 
 /*
  * srb_get_rings
@@ -207,7 +207,7 @@ enum EShmRingBuffersState SHM_RINGBUFFERS_PUBLIC srb_client_get_state(SRBHandle 
  * returns:
  *   the number of ring_buffers
  */
-unsigned int SHM_RINGBUFFERS_PUBLIC srb_get_rings(SRBHandle ring_buffers_handle, struct ShmRingBuffer** ring_buffers);
+SHM_RINGBUFFERS_PUBLIC unsigned int srb_get_rings(SRBHandle ring_buffers_handle, struct ShmRingBuffer** ring_buffers);
 
 /*
  * srb_get_ring_by_description
@@ -219,7 +219,7 @@ unsigned int SHM_RINGBUFFERS_PUBLIC srb_get_rings(SRBHandle ring_buffers_handle,
  * returns:
  *   a pointer to the ring buffer or NULL if not found
  */
-struct ShmRingBuffer SHM_RINGBUFFERS_PUBLIC* srb_get_ring_by_description(SRBHandle ring_buffers_handle, char* description);
+SHM_RINGBUFFERS_PUBLIC struct ShmRingBuffer* srb_get_ring_by_description(SRBHandle ring_buffers_handle, char* description);
 
 /*
  * srb_close
@@ -228,6 +228,6 @@ struct ShmRingBuffer SHM_RINGBUFFERS_PUBLIC* srb_get_ring_by_description(SRBHand
  * params:
  *   ring_buffers_handle - the handle to the ring buffer's shared memory
  */
-void SHM_RINGBUFFERS_PUBLIC srb_close(SRBHandle ring_buffers_handle);
+SHM_RINGBUFFERS_PUBLIC void srb_close(SRBHandle ring_buffers_handle);
 
 #endif
