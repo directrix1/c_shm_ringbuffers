@@ -58,24 +58,27 @@ void closeSRB(int signum)
     exit(0);
 }
 
+#pragma pack(1)
 struct RGBA {
     unsigned char r, g, b, a;
 };
 
 void make_frame(struct RGBA* pixels, double t)
 {
-    for (int y = 0; y < 1080; y++) {
-        for (int x = 0; x < 1920; x++) {
-            pixels->r = (unsigned char)(128.0 * (sin((x + y) * 0.01 + t) + 1.0));
-            pixels->g = (unsigned char)(128.0 * (sin((x + y) * 0.02 + t) + 1.0));
-            pixels->b = (unsigned char)(128.0 * (sin((x + y) * 0.04 + t) + 1.0));
+    int tt = t * 128.0;
+    for (int y = -540; y < 540; y++) {
+        for (int x = -960; x < 960; x++) {
+            int d = abs(x) + abs(y);
+            pixels->r = ((d * 1) + tt) % 255;
+            pixels->g = ((d * 2) + tt) % 255;
+            pixels->b = ((d * 3) + tt) % 255;
             pixels->a = 255;
             pixels++;
         }
     }
 }
 
-#define FPS (10)
+#define FPS (60)
 
 int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 {
@@ -87,7 +90,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
 
     struct ShmRingBufferDef srbd = {
         .buffer_size = 1920 * 1080 * sizeof(struct RGBA), // Gonna be passing 1920x1080 RGBA data
-        .num_buffers = 3, // Gonna make a ring buffer of size 3, this is the minimum size
+        .num_buffers = 10,
         .description = channelName, // What to call this ringbuffer
     };
 
@@ -101,22 +104,29 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
     printf("Created ring description: %s\n", srb->description);
 
     double curTime = get_cur_time();
-    double frameJump = 1.0 / FPS;
     struct RGBA* pixels = (struct RGBA*)srb_producer_first_write_buffer(srb);
     make_frame(pixels, curTime);
-    useconds_t frame_time = 1000000 / FPS;
     curTime = get_cur_time();
+    double secsPerFrame = 1.0 / FPS;
+    long long int frame = 0;
     while (1) {
         pixels = (struct RGBA*)srb_producer_next_write_buffer(srb);
-        useconds_t dt = (useconds_t)((get_cur_time() - curTime) * 1000000.0);
-        if (dt < frame_time) {
-            usleep(frame_time - dt);
-            curTime += frameJump;
-        } else {
-            printf("Not hitting %d fps (%d > %d).\n", (FPS), dt, frame_time);
-            curTime = get_cur_time();
+        double startTime = get_cur_time();
+        make_frame(pixels, startTime);
+        frame++;
+        if (frame == FPS) {
+            double newTime = get_cur_time();
+            double dt = newTime - curTime;
+            curTime = newTime;
+            printf("FPS (%d expected): %.2f\n", (FPS), (FPS / dt));
+            frame = 0;
         }
-        make_frame(pixels, curTime);
+        double endTime = get_cur_time();
+        double dt = endTime - startTime;
+        if (dt < secsPerFrame) {
+            dt = secsPerFrame - dt;
+            usleep(dt * 1000000);
+        }
     };
 
     return 0;
