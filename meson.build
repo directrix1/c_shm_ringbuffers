@@ -12,6 +12,16 @@ shlib = shared_library('shm_ringbuffers', 'src/shm_ringbuffers.c',
   gnu_symbol_visibility : 'hidden',
 )
 
+srbhost_exe = executable('srbhost', 'src/srbhost.c',
+   install : true,
+   include_directories: include_directories('src'),
+   link_with : shlib)
+
+srbinfo_exe = executable('srbinfo', 'src/srbinfo.c',
+   install : true,
+   include_directories: include_directories('src'),
+   link_with : shlib)
+
 test_exe = executable('test1', 'tests/test1.c',
    include_directories: include_directories('src'),
    link_with : shlib)

@@ -41,16 +41,6 @@ double get_cur_time(void)
     return (ts.tv_sec + (double)ts.tv_nsec / 1000000000.0);
 }
 
-void hostCloseSRB(int signum)
-{
-    printf("Signalling (%d) that host is shutting down...\n", signum);
-    srb_host_signal_stopping(h);
-    sleep(5);
-    printf("Closing shared buffers.\n");
-    srb_close(h);
-    exit(0);
-}
-
 void closeSRB(int signum)
 {
     printf("Closing shared buffers (%d).\n", signum);
@@ -65,6 +55,7 @@ struct RGBA {
 
 void make_frame(struct RGBA* pixels, double t)
 {
+    // Make a pretty animated pattern in the buffer
     int tt = t * 128.0;
     for (int y = -540; y < 540; y++) {
         for (int x = -960; x < 960; x++) {
@@ -80,28 +71,22 @@ void make_frame(struct RGBA* pixels, double t)
 
 #define FPS (60)
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char** argv)
+int main(__attribute((unused)) int argc, __attribute((unused)) char** argv)
 {
     char* channelName = "video_frames";
     struct ShmRingBuffer* srb;
 
     // Host needs to be run before and while all clients are run.
-    printf("Hosting Channel: %s\n", channelName);
+    printf("Producing: %s at /srb_video_test\n", channelName);
 
-    struct ShmRingBufferDef srbd = {
-        .buffer_size = 1920 * 1080 * sizeof(struct RGBA), // Gonna be passing 1920x1080 RGBA data
-        .num_buffers = 10,
-        .description = channelName, // What to call this ringbuffer
-    };
-
-    h = srb_host_new("/srb_video_test", 1, &srbd);
+    h = srb_client_new("/srb_video_test");
     if (h == NULL) {
+        printf("Can't connect to /srb_video_test, please run the following command in the background before using this:\n\n srbhost /srb_video_test video_frames 8294400 10\n");
         return 1;
     }
-    signal(SIGINT, hostCloseSRB);
+    signal(SIGINT, closeSRB);
 
-    srb_get_rings(h, &srb); // We know there's only 1 so ignore return
-    printf("Created ring description: %s\n", srb->description);
+    srb = srb_get_ring_by_description(h, channelName);
 
     double curTime = get_cur_time();
     struct RGBA* pixels = (struct RGBA*)srb_producer_first_write_buffer(srb);
