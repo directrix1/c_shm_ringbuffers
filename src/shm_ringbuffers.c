@@ -121,21 +121,6 @@ enum EShmRingBuffersState srb_client_get_state(SRBHandle ring_buffers_handle)
 // ==================
 
 /*
- * srb_producer_first_write_buffer
- *
- * params:
- *   ring_buffer - the ring buffer to get the first shared buffer from
- *
- * return:
- *   pointer to the first shared buffer
- */
-uint8_t* srb_producer_first_write_buffer(struct ShmRingBuffer* ring_buffer)
-{
-    unsigned int b = ring_buffer->shared->write_ring_pos % ring_buffer->shared->num_buffers;
-    return ring_buffer->buffers + (b * ring_buffer->shared->buffer_size);
-}
-
-/*
  * srb_producer_next_write_buffer
  *   this function returns the next shared write buffer.
  *
@@ -219,7 +204,7 @@ SRBHandle srb_host_new(const char* shm_path, unsigned int num_defs, struct ShmRi
         struct ShmRingBufferDef* src = ring_buffer_defs + i;
         dest->shared->num_buffers = src->num_buffers;
         dest->shared->buffer_size = src->buffer_size;
-        dest->shared->write_ring_pos = src->num_buffers;
+        dest->shared->write_ring_pos = src->num_buffers - 1;
         dest->description = description;
         if (src->description) {
             strcpy(description, src->description);

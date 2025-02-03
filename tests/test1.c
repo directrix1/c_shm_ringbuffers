@@ -109,8 +109,9 @@ int main(int argc, char** argv)
         }
 
         int64_t all_words_size = 0;
-        struct test_struct1* cur = (struct test_struct1*)srb_producer_first_write_buffer(srb);
+        struct test_struct1* cur;
         do {
+            cur = (struct test_struct1*)srb_producer_next_write_buffer(srb);
             printf("Enter some words (q to quit): ");
             fgets(line, 99, stdin);
             line[99] = 0;
@@ -124,7 +125,6 @@ int main(int argc, char** argv)
             cur->anum = all_words_size;
             strcpy(cur->aword, line);
 
-            cur = (struct test_struct1*)srb_producer_next_write_buffer(srb);
         } while ((strcmp(line, "q\n") != 0) && (srb_client_get_state(h) == SRB_RUNNING));
         closeSRB(0);
 

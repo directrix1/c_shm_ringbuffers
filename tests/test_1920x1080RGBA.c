@@ -89,11 +89,10 @@ int main(__attribute((unused)) int argc, __attribute((unused)) char** argv)
     srb = srb_get_ring_by_description(h, channelName);
 
     double curTime = get_cur_time();
-    struct RGBA* pixels = (struct RGBA*)srb_producer_first_write_buffer(srb);
-    make_frame(pixels, curTime);
-    curTime = get_cur_time();
+    struct RGBA* pixels;
     double secsPerFrame = 1.0 / FPS;
     long long int frame = 0;
+    curTime = get_cur_time();
     while (1) {
         pixels = (struct RGBA*)srb_producer_next_write_buffer(srb);
         double startTime = get_cur_time();

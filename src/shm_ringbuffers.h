@@ -125,17 +125,6 @@ SHM_RINGBUFFERS_PUBLIC uint8_t* srb_subscriber_get_next_unread_buffer(struct Shm
 // ==================
 
 /*
- * srb_producer_first_write_buffer
- *
- * params:
- *   ring_buffer - the ring buffer to get the first shared buffer from
- *
- * return:
- *   pointer to the first shared buffer
- */
-SHM_RINGBUFFERS_PUBLIC uint8_t* srb_producer_first_write_buffer(struct ShmRingBuffer* ring_buffer);
-
-/*
  * srb_producer_next_write_buffer
  *   this function returns the next shared write buffer.
  *
