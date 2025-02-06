@@ -1,7 +1,7 @@
 c_shm_ringbuffers
 =================
 
-This library is intended to provide shared memory ring buffers which are used to efficiently convey state information from producer processes to subscriber processes in a relatively simple, efficient, and size-invariant way (well the buffers themselves are fixed to a size you specify in the host). There are 3 roles:
+This library is intended to provide shared memory ring buffers which are used to efficiently convey state information from producer processes to subscriber processes in a relatively simple, efficient, and variably sized per ringbuffer way. There are 3 roles:
 
 Host
 ----
