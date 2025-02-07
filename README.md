@@ -1,4 +1,4 @@
-c_shm_ringbuffers
+shm_ringbuffers
 =================
 
 This library is intended to provide shared memory ring buffers which are used to efficiently convey state information via rings of buffers (which have per ring fixed buffer size and count) from producer processes to subscriber processes in a relatively simple and efficient way. Think of it like a local high performance, simple to use, interprocess FIFO, with the downside being a subscriber may potentially drop some buffers if it can't keep up.
