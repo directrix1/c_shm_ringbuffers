@@ -1,4 +1,4 @@
+-I.
+-I../src
 -I/usr/local/include
 -I/usr/include
--I../src
--I.
