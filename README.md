@@ -3,7 +3,7 @@ c_shm_ringbuffers
 
 This library is intended to provide shared memory ring buffers which are used to efficiently convey state information via rings of buffers (which have per ring fixed buffer size and count) from producer processes to subscriber processes in a relatively simple and efficient way. Think of it like a local high performance, simple to use, interprocess FIFO, with the downside being a subscriber may potentially drop some buffers if it can't keep up.
 
-This software is currently only compatible with systems that have a POSIX interface. So pretty much anything but Windows (patches to enable Windows support welcome).
+This software is currently only compatible with systems that have a *POSIX interface*. So pretty much anything but Windows (*Linux*, *Unix*, *BSD*, *MacOS*, etc., but patches to enable Windows support welcome).
 
 There are 3 roles that software using this library may take on:
 
@@ -22,6 +22,18 @@ The clients are connected to the buffers setup by the host, they have a couple s
  * Subscriber - a process interested in receiving the continuously updated information pushed by the producer over the ring buffers. The goal is not to receive all data, but to receive it on an ongoing regular basis, and depending on application requirements, to possibly consume the information at a rate as fast as the producer can make it.
 
 Each named ring buffer can have any number of subscribers but currently only one producer per ring buffer.
+
+Building
+========
+
+This software currently requires a POSIX based shared memory implementation to function (so probably not Windows at the moment?). It is written in C and uses [Meson Build system](https://mesonbuild.com/).
+
+To build run (from within the source tree):
+
+   meson setup builddir
+   cd builddir
+   ninja
+   ninja install
 
 Utilities
 =========
